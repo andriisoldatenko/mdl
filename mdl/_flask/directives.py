@@ -7,10 +7,10 @@ try:
 except ImportError:  # pragma: no cover
     has_flask = False
 
-from . import interfaces
-from .compat import string_types
-from .loader import Loader
-from .runtime import Error, Errors, Route, Transform, Application
+from .. import interfaces
+from ..compat import string_types
+from ..loader import Loader
+from ..runtime import Error, Errors, Route, Transform, Application
 
 __all__ = ('FlaskLoader', 'FlaskBlueprint', 'FlaskBlueprintRoute')
 

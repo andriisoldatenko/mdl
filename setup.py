@@ -48,9 +48,4 @@ setup(
     install_requires=install_requires,
     tests_require=tests_require,
     include_package_data=True,
-    entry_points={
-        'console_scripts': [
-            'mdl-inspect = mdl.scripts.inspect:main',
-        ],
-    }
 )

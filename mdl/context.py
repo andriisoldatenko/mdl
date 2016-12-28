@@ -9,10 +9,7 @@ __all__ = ('Context',)
 class Context(object):
     implements(interfaces.IContext)
 
-    def __init__(self, request, params, markers=()):
-        self.request = request
-        self.params = params
-
+    def __init__(self, markers=()):
         self._contexts = {}
         self._stack = [ContextItem()]
 
@@ -69,40 +66,3 @@ class ContextItem(object):
 
     def register_teardown_callback(self, callback):
         self._teardown_callbacks.append(callback)
-
-
-class Params(object):
-
-    def __init__(self, **params):
-        self.__dict__.update(params)
-
-    @staticmethod
-    def generate_class(op):
-        """ Generate class for swagger operation """
-        slots = {'__oper__'}
-        attrs = {'__oper__': op}
-
-        for name, element in op.params.items():
-            slots.add(name)
-            attrs[name] = ParamsProperty(name)
-
-        name = 'Params_%s' % op.operation_id
-        cls = type(name, (Params,), attrs)
-        cls.__slots__ = tuple(slots)
-
-        return cls
-
-
-class ParamsProperty(object):
-
-    def __init__(self, name):
-        self.name = name
-
-    def __get__(self, ob, type):
-        try:
-            return ob.__dict__[self.name]
-        except KeyError:
-            raise AttributeError
-
-    def __set__(self, ob, val):
-        raise AttributeError

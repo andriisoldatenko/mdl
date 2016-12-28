@@ -42,4 +42,4 @@ paths:
            description: OK
 
        x-transform:
-         - aiohttp_web_srv.intro
+         - aiohttp_web_srv.index

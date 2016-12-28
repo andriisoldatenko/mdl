@@ -1,9 +1,11 @@
 """ Custom application object """
 from aiohttp import hdrs, web
 
+from ..web.context import WebContext
+
 from .interfaces import IRoute
 from .params import unmarshal_request
-from ..context import Context
+from .response import ResponseRenderer
 
 
 class WebApplication(web.Application):
@@ -18,24 +20,24 @@ class WebApplication(web.Application):
         request._match_info = match_info
         expect = request.headers.get(hdrs.EXPECT)
         if expect:
-            resp = (
-                await match_info.expect_handler(request))
+            resp = await match_info.expect_handler(request)
 
         if resp is None:
             handler = match_info.handler
 
             # init operations params
             if IRoute.providedBy(handler):
-                ctx = Context(
-                    request,
-                    unmarshal_request(handler.params_cls, request))
+                ctx = WebContext(
+                    handler.op, request, unmarshal_request(handler.params_cls, request))
             else:
-                ctx = request
+                ctx = WebContext(None, request, None)
 
             for app in match_info.apps:
                 for factory in reversed(app.middlewares):
                     handler = await factory(app, handler)
+
             resp = await handler(ctx)
+            return ResponseRenderer(ctx, resp)
 
         assert isinstance(resp, web.StreamResponse), (
             "Handler {!r} should return response instance, "

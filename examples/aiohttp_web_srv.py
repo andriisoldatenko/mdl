@@ -21,25 +21,16 @@ ITEM_ID_FORMAT = mdl.format(
 )
 
 
-async def intro(ctx):
-    txt = textwrap.dedent("""\
-        Type {url}/hello/John  {url}/simple or {url}/{item_id}/
-        in browser url bar
+async def index(ctx):
+    return textwrap.dedent(
+    """
+    Type {url}/hello/John  {url}/simple or {url}/{item_id}/ in browser url bar
+
     """).format(url='127.0.0.1:8080', item_id='12345')
-    binary = txt.encode('utf8')
-    resp = StreamResponse()
-    resp.content_length = len(binary)
-    resp.content_type = 'text/plain'
-    await resp.prepare(ctx.request)
-    resp.write(binary)
-    return resp
 
 
 async def item_info(ctx):
-    resp = Response()
-    resp.body = b"Body changed %s" % str(ctx.params.item_id).encode('utf-8')
-    resp.content_type = 'text/plain'
-    return resp
+    return b"Body changed %s\n\n" % str(ctx.params.item_id).encode('utf-8')
 
 
 def init(loop):

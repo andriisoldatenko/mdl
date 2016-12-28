@@ -8,7 +8,7 @@ except ImportError:  # pragma: no cover
     has_aiohttp = False
 
 from .. import interfaces
-from ..context import Params
+from ..web.context import Params
 from ..declarations import implements
 from ..exceptions import ConfigurationError
 from ..loader import Loader

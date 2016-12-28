@@ -9,7 +9,10 @@ __all__ = ('Context',)
 class Context(object):
     implements(interfaces.IContext)
 
-    def __init__(self, markers=()):
+    def __init__(self, request, params, markers=()):
+        self.request = request
+        self.params = params
+
         self._contexts = {}
         self._stack = [ContextItem()]
 

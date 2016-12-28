@@ -3,25 +3,10 @@ from aiohttp import hdrs, web
 
 from .interfaces import IRoute
 from .params import unmarshal_request
-
-
-class WebRequest(web.Request):
-
-    _params = None
-
-    @property
-    def params(self):
-        return self._params
+from ..context import Context
 
 
 class WebApplication(web.Application):
-
-    def _make_request(self, message, payload, protocol):
-        return WebRequest(
-            message, payload,
-            protocol.transport, protocol.reader, protocol.writer,
-            protocol.time_service, protocol._request_handler,
-            secure_proxy_ssl_header=self._secure_proxy_ssl_header)
 
     async def _handle(self, request):
         match_info = await self._router.resolve(request)
@@ -41,13 +26,16 @@ class WebApplication(web.Application):
 
             # init operations params
             if IRoute.providedBy(handler):
-                request._params = unmarshal_request(
-                    handler.params_cls, request)
+                ctx = Context(
+                    request,
+                    unmarshal_request(handler.params_cls, request))
+            else:
+                ctx = request
 
             for app in match_info.apps:
                 for factory in reversed(app.middlewares):
                     handler = await factory(app, handler)
-            resp = await handler(request)
+            resp = await handler(ctx)
 
         assert isinstance(resp, web.StreamResponse), (
             "Handler {!r} should return response instance, "

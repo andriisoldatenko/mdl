@@ -21,7 +21,7 @@ ITEM_ID_FORMAT = mdl.format(
 )
 
 
-async def intro(request):
+async def intro(ctx):
     txt = textwrap.dedent("""\
         Type {url}/hello/John  {url}/simple or {url}/{item_id}/
         in browser url bar
@@ -30,31 +30,15 @@ async def intro(request):
     resp = StreamResponse()
     resp.content_length = len(binary)
     resp.content_type = 'text/plain'
-    await resp.prepare(request)
+    await resp.prepare(ctx.request)
     resp.write(binary)
     return resp
 
 
-async def simple(request):
-    return Response(text="Simple answer")
-
-
-async def item_info(request):
+async def item_info(ctx):
     resp = Response()
-    resp.body = b"Body changed %s" % str(request.params.item_id).encode('utf-8')
+    resp.body = b"Body changed %s" % str(ctx.params.item_id).encode('utf-8')
     resp.content_type = 'text/plain'
-    return resp
-
-
-async def hello(request):
-    resp = StreamResponse()
-    name = request.match_info.get('name', 'Anonymous')
-    answer = ('Hello, ' + name).encode('utf8')
-    resp.content_length = len(answer)
-    resp.content_type = 'text/plain'
-    await resp.prepare(request)
-    resp.write(answer)
-    await resp.write_eof()
     return resp
 
 

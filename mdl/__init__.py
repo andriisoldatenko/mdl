@@ -29,3 +29,11 @@ try:
     __all__ = __all__ + _flask.__all__  # noqa
 except ImportError:  # pragma: no cover
     pass
+
+try:
+    import aiohttp as _  # noqa
+except:
+    pass
+else:
+    from . import _aiohttp as aiohttp  # noqa
+    __all__ = __all__ + (aiohttp,)  # noqa

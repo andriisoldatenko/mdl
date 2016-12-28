@@ -1,9 +1,9 @@
 import os
+import six
 import yaml
 from ..config import Configurator
 from ..loader import Loader
 from ..path import AssetResolver
-from ..compat import string_types
 
 __all__ = ('bootstrap', 'bootstrap_with')
 
@@ -33,7 +33,7 @@ def bootstrap_with(namespace, loader=Loader,
         config.load_namespace(namespace)
 
     # scan packages
-    if isinstance(packages, string_types):
+    if isinstance(packages, six.string_types):
         packages = (packages,)
 
     if packages:

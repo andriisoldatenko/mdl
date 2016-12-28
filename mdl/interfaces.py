@@ -1,15 +1,16 @@
 from zope import interface
+from .interface import Interface
 
 ANY = '*'
 UNKNOW = object()
 CATEGORY = 'mdl'
 
 
-class IApplication(interface.Interface):
+class IApplication(Interface):
     """Application"""
 
 
-class IContext(interface.Interface):
+class IContext(Interface):
     """Transformation context"""
 
 
@@ -20,7 +21,7 @@ class ITransform(interface.Interface):
         """Transform input model"""
 
 
-class ITransformDefinition(interface.Interface):
+class ITransformDefinition(Interface):
     """Transform definition"""
 
     name = interface.Attribute(

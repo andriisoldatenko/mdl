@@ -9,7 +9,6 @@ class Transform(object):
     implements(ITransform)
 
     def __init__(self, transforms, errors):
-        # type: (List[Transform], Errors) -> None
         self._transforms = transforms
         self._errors = errors
 
@@ -48,12 +47,16 @@ class Errors(object):
 
 class Route(object):
 
-    def __init__(self, registry, name, transform, markers=(), **options):
+    def __init__(self, registry, name, path, transform, markers=(), **options):
         self.registry = registry
         self.name = name
+        self.path = path
         self.transform = transform
         self.options = options
         self.markers = markers
+
+    def get_option(self, name, default=None):
+        return self.options.get(name, default)
 
     def __call__(self, model):
         return self.transform(Context(self.markers), model)

@@ -53,19 +53,3 @@ class CyclicDependencyError(Exception):
             L.append('%r sorts before %r' % (dependent, dependees))
         msg = 'Implicit ordering cycle:' + '; '.join(L)
         return msg
-
-
-class UnknownFieldError(ConfigurationError):
-    pass
-
-
-class NameIsRequired(ConfigurationError):
-    pass
-
-
-class AttributeIsDefined(ConfigurationError):
-    pass
-
-
-class PathIsRequired(ConfigurationError):
-    pass

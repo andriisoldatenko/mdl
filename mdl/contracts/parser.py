@@ -1,11 +1,12 @@
 """ PyContracts support """
 from __future__ import absolute_import
+
+import six
 from contracts.main import parse_flexible_spec
 from contracts.interface import ContractException, MissingContract
 from contracts.interface import ContractNotRespected
 from zope.interface.interface import Method
 
-from ..compat import string_types
 from ..interface import Attribute
 from .contract import InterfaceContract
 from .contract import AdapterContract, AttributeContract, MethodContract
@@ -68,7 +69,7 @@ def parse_iface_contract(iface):
 
         elif isinstance(element, Attribute):
             spec = element.spec
-            if not isinstance(spec, string_types):
+            if not isinstance(spec, six.string_types):
                 raise ContractException(
                     'String type is required for attribute contract '
                     'definition: %s.%s got: %s' % (

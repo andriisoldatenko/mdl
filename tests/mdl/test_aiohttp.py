@@ -1,15 +1,8 @@
 import json
 import unittest
-try:
-    from unittest import mock
-except ImportError:
-    import mock
 
 import mdl
 from mdl import interfaces
-
-
-blueprint = mock.Mock()
 
 
 class TestException(Exception):
@@ -41,68 +34,51 @@ TR1 = mdl.Transform([resp], mdl.Errors([]))
 
 
 DATA = """
-package: tests.mdl.test_flask
+swagger: "2.0"
+info:
+  title: Test API
+  version: "1.0.0"
 
-application:
-  name: TestApp
-  blueprint: tests.mdl.test_flask.blueprint
+basePath: /app
 
-  itransform:
-    - tests.mdl.test_flask.from_json
+x-package: tests.mdl.test_aiohttp
+x-name: TestApp
+x-in-transform:
+   - tests.mdl.test_aiohttp.from_json
+x-out-transform:
+   - tests.mdl.test_aiohttp.to_json
 
-  otransform:
-    - tests.mdl.test_flask.to_json
+paths:
+  /some-path:
+    post:
+       operationId: testing
+       produces:
+         - application/json
+       responses:
+         '200':
+           description: OK
 
-  routes:
-    - path: /some-path
-      name: testing
-      methods: "POST"
-      transform:
-         - tests.mdl.test_flask.error
-      errors:
-         - tests.mdl.test_flask.TestException: tests.mdl.test_flask.error_json
-
-    - path: /testing2
-      name: testing2
-      methods: "POST"
-      transform:
-         - tests.mdl.test_flask.resp
-
-    - path: /testing3
-      name: testing3
-      methods: "POST"
-      transform:
-         - tests.mdl.test_flask.TR1
+       x-transform:
+         - tests.mdl.test_aiohttp.error
+       x-errors:
+         - tests.mdl.test_aiohttp.TestException:
+              tests.mdl.test_aiohttp.error_json
 
 """
 
-# BP = mdl.FlaskBlueprint(
-#    'TestApp2',
-#    'tests.mdl.test_flask.blueprint',
-#    itransform=['tests.mdl.test_flask.from_json'],
-#    otransform=to_json)
 
-# BP.add_route(
-#    'testing', '/confirm',
-#    ['tests.mdl.test_flask.error'], **{'methods': ('POST',)})
+class AiohttpApplicationTestCase(unittest.TestCase):
 
-
-class ApplicationTestCase(unittest.TestCase):
-
-    def setUp(self):
-        blueprint.reset()
-
-    def _test_app(self):
+    def test_app(self):
         registry = mdl.Registry()
 
-        config = mdl.Configurator(mdl.FlaskLoader(), registry)
+        config = mdl.Configurator(mdl.aiohttp.Loader(), registry)
         config.loader.load(DATA)
-        config.scan('tests.mdl.test_flask')
+        config.scan('tests.mdl.test_aiohttp')
         config.commit()
 
         app = registry.getUtility(interfaces.IApplication, 'TestApp')
         self.assertEqual(app.name, 'TestApp')
-        self.assertIs(app.blueprint, blueprint)
         self.assertIs(app.registry, registry)
         self.assertIsInstance(app['testing'], mdl.Route)
         self.assertEqual(list(sorted(app.keys())),
@@ -119,14 +95,13 @@ class ApplicationTestCase(unittest.TestCase):
 
         app2 = registry.getUtility(interfaces.IApplication, 'TestApp2')
         self.assertEqual(app2.name, 'TestApp2')
-        self.assertIs(app2.blueprint, blueprint)
         self.assertIs(app2.registry, registry)
         self.assertIsNotNone(app2['testing'])
 
     def _test_exc_handling(self):
         registry = mdl.Registry()
 
-        config = mdl.Configurator(mdl.FlaskLoader(), registry)
+        config = mdl.Configurator(mdl.aiohttp.Loader(), registry)
         config.loader.load(DATA)
         config.commit()
 
@@ -139,7 +114,7 @@ class ApplicationTestCase(unittest.TestCase):
     def _test_route(self):
         registry = mdl.Registry()
 
-        config = mdl.Configurator(mdl.FlaskLoader(), registry)
+        config = mdl.Configurator(mdl.aiohttp.Loader(), registry)
         config.loader.load(DATA)
         config.commit()
 
@@ -152,7 +127,7 @@ class ApplicationTestCase(unittest.TestCase):
     def _test_route_transform(self):
         registry = mdl.Registry()
 
-        config = mdl.Configurator(mdl.FlaskLoader(), registry)
+        config = mdl.Configurator(mdl.aiohttp.Loader(), registry)
         config.loader.load(DATA)
         config.commit()
 

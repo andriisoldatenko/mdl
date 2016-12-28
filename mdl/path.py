@@ -1,12 +1,11 @@
 """Copy of pyramid's path resolver,
 https://github.com/Pylons/pyramid/blob/master/pyramid/path.py """
 
+import imp
 import os
 import pkg_resources
+import six
 import sys
-import imp
-
-from .compat import string_types
 
 
 ignore_types = [imp.C_EXTENSION, imp.C_BUILTIN]
@@ -98,7 +97,7 @@ class Resolver(object):
         if package in (None, CALLER_PACKAGE):
             self.package = package
         else:
-            if isinstance(package, string_types):
+            if isinstance(package, six.string_types):
                 try:
                     __import__(package)
                 except ImportError:
@@ -207,7 +206,7 @@ class DottedNameResolver(Resolver):
            v = r.resolve('xml') # v is the xml module
 
         """
-        if not isinstance(dotted, string_types):
+        if not isinstance(dotted, six.string_types):
             raise ValueError('%r is not a string' % (dotted,))
         package = self.package
         if package is CALLER_PACKAGE:
@@ -228,7 +227,7 @@ class DottedNameResolver(Resolver):
            v = r.maybe_resolve(xml)
            # v is the xml module; no exception raised
         """
-        if isinstance(dotted, string_types):
+        if isinstance(dotted, six.string_types):
             package = self.package
             if package is CALLER_PACKAGE:
                 package = caller_package()

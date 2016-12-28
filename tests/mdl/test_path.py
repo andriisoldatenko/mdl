@@ -1,6 +1,6 @@
 import unittest
 import os
-from mdl.compat import PY2
+from six import PY2
 
 here = os.path.abspath(os.path.dirname(__file__))
 

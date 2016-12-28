@@ -17,7 +17,9 @@ def read(f):
     return open(os.path.join(os.path.dirname(__file__), f)).read().strip()
 
 
-install_requires = ['PyYAML', 'PyContracts', 'zope.interface', 'venusian']
+install_requires = [
+    'PyYAML', 'PyContracts',
+    'bravado_core', 'six', 'zope.interface', 'venusian']
 
 tests_require = install_requires + []
 

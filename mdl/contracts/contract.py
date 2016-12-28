@@ -1,11 +1,11 @@
 """Interface contract object"""
 from __future__ import absolute_import
+import six
 import sys
 import logging
 from contracts.interface import ContractException, ContractNotRespected
 
 from .extension import ID
-from ..compat import reraise
 from ..declarations import implementer
 from ..verify import verifyObject
 from ..interface import InterfaceClass
@@ -94,7 +94,7 @@ class AdapterContract(object):
                         self.iface.__name__, self.name),
                     exc_info=(exc_type, exc_value, exc_tb))
 
-            reraise(exc_type, exc_value, exc_tb)
+            six.reraise(exc_type, exc_value, exc_tb)
 
         if not self.iface.providedBy(result):
             raise ContractException(
@@ -210,7 +210,7 @@ class MethodContract(object):
                         self.iface.__name__, self.name),
                     exc_info=(exc_type, exc_value, exc_tb))
 
-            reraise(exc_type, exc_value, exc_tb)
+            six.reraise(exc_type, exc_value, exc_tb)
 
         if self.result_contract is not None:
             result = self._check_result_contract(ob, result)

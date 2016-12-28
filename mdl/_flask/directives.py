@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import six
 import venusian
 try:
     from flask import request
@@ -8,7 +9,6 @@ except ImportError:  # pragma: no cover
     has_flask = False
 
 from .. import interfaces
-from ..compat import string_types
 from ..loader import Loader
 from ..runtime import Error, Errors, Route, Transform, Application
 
@@ -17,7 +17,9 @@ __all__ = ('FlaskLoader', 'FlaskBlueprint', 'FlaskBlueprintRoute')
 
 class FlaskLoader(Loader):
 
-    def configure(self, config):
+    def configure(self, config, swagger_config):
+        super(FlaskLoader, self).configure(config, swagger_config)
+
         if has_flask:
             config.add_directive('add_blueprint', add_blueprint_directive)
             config.add_directive('add_blueprint_route', add_route_directive)
@@ -175,7 +177,7 @@ def add_blueprint_directive(self, name, blueprint=None,
 
 def add_route_directive(self, blueprint, name, path,
                         transform=None, errors=None, **options):
-    if isinstance(options.get('methods'), string_types):
+    if isinstance(options.get('methods'), six.string_types):
         options['methods'] = (options['methods'],)
 
     route = FlaskBlueprintRoute(

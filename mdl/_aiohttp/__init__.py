@@ -1,4 +1,4 @@
-""" Flask plugin """
+""" aiohttp plugin """
 
 from .directives import *  # noqa
 

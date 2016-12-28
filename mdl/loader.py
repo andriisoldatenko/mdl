@@ -1,41 +1,37 @@
+import collections
 import yaml
+from six import string_types
+from bravado_core.spec import Spec
 
 from . import exceptions
-from .compat import string_types
 
 __all__ = ('Loader',)
+
+
+ApplicationInfo = collections.namedtuple(
+    'ApplicationInfo',
+    'name base_path in_transform out_transform errors')
+
+OperationInfo = collections.namedtuple(
+    'OperationInfo', 'id path method transform errors')
 
 
 class Loader(object):
 
     def __init__(self):
-        self._apps = {}
+        self._apps = []
         self._packages = set()
+        self._formats = []
 
-    def configure(self, config):
-        # type: (Configurator) -> None
-        pass
+    def configure(self, config, swagger_config):
+        self._swagger_config = swagger_config
+
+    def register_format(self, format):
+        self._formats.append(format)
 
     def load(self, s, flavor=None, name=None):
-        return self._process(yaml.load(s), flavor, name)
+        data = yaml.load(s)
 
-    def packages(self):
-        return self._packages
-
-    def commit(self, config):
-        for app in self._apps.values():
-            self.create_app(app, config)
-
-            for route in app.routes:
-                self.create_route(app, route, config)
-
-    def create_app(self, app, config):
-        raise NotImplementedError  # pragma: no cover
-
-    def create_route(self, app, route, config):
-        raise NotImplementedError  # pragma: no cover
-
-    def _process(self, data, flavor, name):
         if flavor is not None:
             fv = data.get('flavor')
             if fv is not None and flavor != fv:
@@ -43,162 +39,75 @@ class Loader(object):
                     flavor, fv, name))
                 return
 
-        # type: (Dict) -> None
-        for key, value in data.items():
-            if key in ('flavor',):
-                continue
+        # extract package
+        package = data.get('x-package', ())
+        if isinstance(package, string_types):
+            package = (package,)
 
-            if key == 'package':
-                if isinstance(value, string_types):
-                    value = (value,)
+        self._packages.update(package)
+        self._apps.append(data)
 
-                self._packages.update(value)
+        return data
 
-            elif key == 'application':
-                if 'name' not in value:
-                    raise exceptions.ApplicationNameRequired()
+    def packages(self):
+        return self._packages
 
-                name = value['name']
-                app = self._apps.get(name)
-                if app is None:
-                    app = self._apps[name] = Application(name)
+    def commit(self, config):
+        for data in self._apps:
+            spec = Spec(data, config=self._swagger_config)
+            for format in self._formats:
+                spec.register_format(format)
 
-                app.process(value)
-            else:
-                raise exceptions.UnknownFieldError(key, value)
+            spec.build()
 
-        return self
+            app_info = ApplicationInfo(
+                data.get('x-name', ''),
+                data.get('basePath', '').rstrip('/'),
+                self._seq_of_strings(data.get('x-in-transform')),
+                self._seq_of_strings(data.get('x-out-transform')),
+                self._dict_from_list(data, 'x-errors'))
 
+            self.create_app(spec, app_info, config)
 
-class Application:
+            for resource in spec.resources.values():
+                self.create_resource(resource, app_info, config)
 
-    def __init__(self, name):
-        self.name = name
-        self.itransform = None
-        self.otransform = None
-        self.errors = {}
-        self.routes = []
-        self.params = {}
+                for op in resource.operations.values():
+                    op_info = OperationInfo(
+                        op.operation_id,
+                        op.path_name,
+                        op.http_method,
+                        self._seq_of_strings(op.op_spec.get('x-transform')),
+                        self._dict_from_list(op.op_spec, 'x-errors'))
 
-    def get_params(self):
-        params = dict(self.params)
-        params['itransform'] = self.itransform
-        params['otransform'] = self.otransform
-        params['errors'] = self.errors
-        return params
+                    self.create_operation(op, app_info, op_info, config)
 
-    def process(self, data):
-        for key, value in data.items():
-            f = getattr(self, '%s_' % key, None)
-            if f is None:
-                if key in self.params:
-                    if not isinstance(self.params[key], list):
-                        raise exceptions.UnknownFieldError(key, value)
-                    self.params[key].append(value)
+    def create_app(self, spec, app_info, config):
+        raise NotImplementedError  # pragma: no cover
 
-                self.params[key] = value
-            else:
-                f(value)
+    def create_resource(self, resource, app_info, config):
+        pass
 
-    def name_(self, data):
-        if self.name is not None and self.name != data:
-            raise exceptions.ApplicationNameIsRequired()
+    def create_operation(self, op, app_info, op_info, config):
+        raise NotImplementedError  # pragma: no cover
 
-        self.name = data
+    def _dict_from_list(self, data, name):
+        d = data.get(name)
+        if d is None:
+            return {}
+        if isinstance(d, (tuple, list)):
+            data = {}
+            for item in d:
+                data.update(item)
+            return data
+        if not isinstance(d, dict):
+            raise exceptions.ConfigurationError(
+                'dict or None is required for "%s" got %r' % (name, d))
+        return d
 
-    def itransform_(self, data):
-        if self.itransform is not None:
-            raise exceptions.AttributeIsDefined('itransform', data)
-
-        if isinstance(data, string_types):
-            data = (data,)
-
-        self.itransform = tuple(data)
-
-    def otransform_(self, data):
-        if self.otransform is not None:
-            raise exceptions.AttributeIsDefined('otransform', data)
-
-        if isinstance(data, string_types):
-            data = (data,)
-
-        self.otransform = tuple(data)
-
-    def errors_(self, data):
-        if isinstance(data, dict):
-            data = [data]
-        for item in data:
-            self.errors.update(item)
-
-    def routes_(self, data):
-        for route_info in data:
-            if 'name' not in route_info:
-                raise exceptions.NameIsRequired(data)
-
-            name = route_info['name']
-
-            route = None
-            for _route in self.routes:
-                if _route.name == name:
-                    route = _route
-                    break
-
-            if route is None:
-                route = Route(name)
-                self.routes.append(route)
-
-            route.process(route_info)
-
-
-class Route(object):
-
-    def __init__(self, name):
-        self.name = name
-        self.path = None
-        self.transform = None
-        self.iface = None
-        self.methods = set()
-        self.errors = {}
-        self.params = {}
-
-    def get_params(self):
-        params = dict(self.params)
-        params['errors'] = self.errors
-        return params
-
-    def process(self, data):
-        for key, value in data.items():
-            f = getattr(self, '%s_' % key, None)
-            if f is None:
-                if key in self.params:
-                    if not isinstance(self.params[key], list):
-                        raise exceptions.UnknownFieldError(key, value)
-                    self.params[key].append(value)
-
-                self.params[key] = value
-            else:
-                f(value)
-
-    def name_(self, data):
-        if self.name is not None and self.name != data:
-            raise exceptions.NameIsRequired(self)
-
-        self.name = data
-
-    def path_(self, data):
-        if self.path is not None and self.path != data:
-            raise exceptions.PathIsRequired()
-
-        self.path = data
-
-    def transform_(self, data):
-        if self.transform is not None:
-            raise exceptions.AttributeIsDefined()
-
-        self.transform = tuple(data)
-
-    def errors_(self, data):
-        if isinstance(data, dict):
-            data = [data]
-        for item in data:
-            self.errors.update(item)
+    def _seq_of_strings(self, s):
+        if isinstance(s, string_types):
+            return (s,)
+        elif s is None:
+            return ()
+        return s

@@ -1,11 +1,11 @@
 import itertools
 import os.path
 import operator
+import six
 import sys
 import venusian
 import pkg_resources
 
-from .compat import reraise
 from .interfaces import CATEGORY
 from .registry import Registry
 from .path import AssetResolver, DottedNameResolver
@@ -17,7 +17,7 @@ __all__ = ('Configurator',)
 
 class Configurator(object):
 
-    def __init__(self, loader=None, registry=None,
+    def __init__(self, loader=None, registry=None, swagger_config=None,
                  flavor=None, debug=False, debug_config=False):
         self._directives = {}
         self.flavor = flavor
@@ -28,6 +28,7 @@ class Configurator(object):
         self.packages = set()
         self.debug = debug
         self.debug_config = debug_config
+        self.swagger_config = swagger_config
 
         # set registry
         if registry is None:
@@ -41,14 +42,17 @@ class Configurator(object):
 
         self.loader = loader
         if self.loader:
-            self.loader.configure(self)
+            self.loader.configure(self, swagger_config)
 
     def load_mdl_file(self, path):
         if self.loader is None:
             raise ConfigurationError('config loader is not set')
 
-        path = self.asset_resolver.resolve(path)
-        self.loader.load(open(path.abspath()).read(), self.flavor)
+        if os.path.exists(path):
+            self.loader.load(open(path).read(), self.flavor)
+        else:
+            path = self.asset_resolver.resolve(path)
+            self.loader.load(open(path.abspath()).read(), self.flavor)
 
     def load_namespace(self, name):
         if name.endswith('.'):
@@ -287,7 +291,7 @@ class ActionState(object):
                 except Exception:
                     t, v, tb = sys.exc_info()
                     try:
-                        reraise(
+                        six.reraise(
                             ConfigurationExecutionError,
                             ConfigurationExecutionError(t, v, info, action),
                             tb)

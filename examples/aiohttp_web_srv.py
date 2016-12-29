@@ -3,6 +3,7 @@
 
 import mdl
 import asyncio
+import os.path
 import textwrap
 import aiohttp
 
@@ -60,7 +61,7 @@ async def prepare_stream(ctx):
 #
 def init(loop):
     config = mdl.Configurator(mdl.aiohttp.Loader)
-    config.load_mdl_file('aiohttp_web_srv.mdl')
+    config.load_mdl_file(os.path.join(os.path.dirname(__file__), 'aiohttp_web_srv.mdl'))
     reg = config.commit()
     reg.install()
 

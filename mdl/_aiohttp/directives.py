@@ -12,8 +12,6 @@ from ..web.context import Params
 from ..declarations import implements
 from ..exceptions import ConfigurationError
 from ..loader import Loader
-from ..runtime import Error, Errors
-from ..runtime import Route as _Route, Application as _Application
 
 from .interfaces import IRoute
 from .web import WebApplication
@@ -69,32 +67,79 @@ class Loader(Loader):
         config.action(route.discriminator, register, RouteConfig.ORDER)
 
 
-class Route(_Route):
+class Error(object):
+
+    def __init__(self, exc, handler):
+        self.exc = exc
+        self.handler = handler
+
+
+class Errors(object):
+    # very simple exception handling code;
+    # we can use zope.interface adaptation or code generation to make it faster
+
+    def __init__(self, errors):
+        self.errors = errors
+        self.exceptions = tuple(err.exc for err in errors)
+
+    def process(self, ctx, exc):
+        for err in self.errors:
+            if isinstance(exc, err.exc):
+                return err.handler(ctx, exc)
+
+        raise RuntimeError('Can not find exception handler')
+
+
+class Route(object):
     implements(IRoute)
 
     _is_coroutine = True
 
-    def __init__(self, *args, **kwargs):
-        super(Route, self).__init__(*args, **kwargs)
-
+    def __init__(self, registry, name, path, transform, markers=(), **options):
+        self.registry = registry
+        self.name = name
+        self.path = path
+        self.transform = transform
+        self.options = options
+        self.markers = markers
         self.op = self.options.pop('op')
         self.params_cls = Params.generate_class(self.op)
+
+    def get_option(self, name, default=None):
+        return self.options.get(name, default)
 
     async def __call__(self, request):
         return (await self.transform(request))
 
 
-class RuntimeApplication(_Application):
+class RuntimeApplication(object):
 
     def __init__(self, registry, name, base_path,
                  itransform, otransform, errors, **options):
-        super(RuntimeApplication, self).__init__(registry, name, **options)
-
+        self.registry = registry
+        self.name = name
+        self.options = options
         self.name = name
         self.base_path = base_path
         self.in_transform = itransform
         self.out_transform = otransform
         self.errors = errors
+        self._routes = {}
+
+    def keys(self):
+        return self._routes.keys()
+
+    def items(self):
+        return self._routes.items()
+
+    def routes(self):
+        return self._routes.values()
+
+    def __getitem__(self, key):
+        return self._routes[key]
+
+    def register_route(self, route):
+        self._routes[route.name] = route
 
     def init_runtime(self, root=None, loop=None):
         app = WebApplication(loop=loop)
@@ -178,15 +223,6 @@ class RouteConfig(object):
         # parent application
         app = config.registry.getUtility(
             interfaces.IApplication, name=self.app)
-
-        # transformatino for route
-        # route_transform = Transform(
-        #    config.maybe_dotted_seq(self.transform), Errors(errors))
-
-        # complete transformation
-        # transform = Transform(
-        #    app.in_transform +
-        #    (route_transform,) + app.out_transform, app.errors)
 
         # route registration
         route = Route(

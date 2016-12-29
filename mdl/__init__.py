@@ -8,7 +8,6 @@ from .decorators import *  # noqa
 from .formatter import *  # noqa
 from .loader import *  # noqa
 from .registry import *  # noqa
-from .runtime import *  # noqa
 from .interfaces import IContext, ANY  # noqa
 from .scripts import bootstrap  # noqa
 from .verify import *  # noqa
@@ -21,7 +20,6 @@ __all__ = (decorators.__all__ +  # noqa
            formatter.__all__ +  # noqa
            interface.__all__ +  # noqa
            registry.__all__ +  # noqa
-           runtime.__all__ +  # noqa
            verify.__all__  # noqa
 ) + ('ANY', 'IContext', 'bootstrap', 'Configurator')
 

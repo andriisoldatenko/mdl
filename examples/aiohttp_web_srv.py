@@ -7,7 +7,7 @@ import os.path
 import textwrap
 import aiohttp
 
-from aiohttp.web import Application, Response, StreamResponse, run_app
+from aiohttp.web import run_app
 
 
 class ItemID(object):
@@ -25,16 +25,16 @@ class ItemIDFormat(mdl.SwaggerFormat):
     def to_python(self, value):
         return ItemID(value)
 
-    
+
 ##########################
 # Simple handler
 ##########################
 async def index(ctx):
     return textwrap.dedent(
-    """
-    Type {url}/hello/John  {url}/simple or {url}/{item_id}/ in browser url bar
+        """
+        Type {url}/hello/John  {url}/simple or {url}/{item_id}/ in browser url bar
 
-    """).format(url='127.0.0.1:8080', item_id='12345')
+        """).format(url='127.0.0.1:8080', item_id='12345')
 
 
 ################################
@@ -58,10 +58,11 @@ async def prepare_stream(ctx):
     return mdl.aiohttp.Stream(stream)
 
 
-#
+# init app
 def init(loop):
     config = mdl.Configurator(mdl.aiohttp.Loader)
-    config.load_mdl_file(os.path.join(os.path.dirname(__file__), 'aiohttp_web_srv.mdl'))
+    config.load_mdl_file(
+        os.path.join(os.path.dirname(__file__), 'aiohttp_web_srv.mdl'))
     reg = config.commit()
     reg.install()
 

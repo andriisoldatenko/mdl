@@ -19,7 +19,7 @@ class ParamDataType(enum.Enum):
     header = 'header'
     formData = 'formData'
     body = 'body'
-    
+
 
 class Param(_Param):
 

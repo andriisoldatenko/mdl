@@ -51,7 +51,7 @@ class Response(helpers.HeadersMixin):
     def content_coding(self, value):
         """Enables response compression encoding."""
         if type(value) == bool:
-            value = ContentCoding.deflate if force else ContentCoding.identity
+            value = ContentCoding.deflate if value else ContentCoding.identity
 
         assert isinstance(value, ContentCoding), (
             "type should one of None, ContentEncoding")
@@ -84,7 +84,7 @@ class Response(helpers.HeadersMixin):
     @property
     def headers(self):
         return self._headers
-    
+
     @property
     def content_length(self):
         # Just a placeholder for adding setter
@@ -134,7 +134,7 @@ class Response(helpers.HeadersMixin):
         else:
             ctype = self._content_type
         self.headers[CONTENT_TYPE] = ctype
-        
+
     @property
     def last_modified(self, _LAST_MODIFIED=hdrs.LAST_MODIFIED):
         """The value of Last-Modified HTTP header, or None.

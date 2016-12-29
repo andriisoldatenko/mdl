@@ -27,12 +27,6 @@ __all__ = (decorators.__all__ +  # noqa
 
 
 try:
-    from ._flask import *  # noqa
-    __all__ = __all__ + _flask.__all__  # noqa
-except ImportError:  # pragma: no cover
-    pass
-
-try:
     import aiohttp as _  # noqa
 except:
     pass

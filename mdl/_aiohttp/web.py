@@ -28,7 +28,8 @@ class WebApplication(web.Application):
             # init context
             if IRoute.providedBy(handler):
                 ctx = WebContext(
-                    handler.op, request, unmarshal_request(handler.params_cls, request),
+                    handler.op, request,
+                    unmarshal_request(handler.params_cls, request),
                     keep_alive=request.keep_alive)
             else:
                 ctx = WebContext(

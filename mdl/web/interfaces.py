@@ -12,7 +12,7 @@ class IResponse(interface.Interface):
 
 class IParameters(interface.Interface):
     """ parameters """
-    
+
 
 class IWebContext(IContext):
     """Web handler context"""
@@ -35,7 +35,7 @@ class IStream(interface.Interface):
 
 class IStreamWriter(interface.Interface):
     """ Writer object for stream """
-    
+
     params = interface.Attribute('Parameters', spec='IParameters')
     request = interface.Attribute('Request', spec='IRequest')
 
@@ -47,7 +47,7 @@ class IStreamWriter(interface.Interface):
 
     def write_eof():
         """ write eof to stream,
-        writer object is not usable after calling this function 
+        writer object is not usable after calling this function
 
         :rtype: None
         """

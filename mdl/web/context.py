@@ -41,7 +41,7 @@ class WebContext(Context):
 
     def set_tcp_cork(self, value):
         self._tcp_cork = value
-        
+
 
 class Params(object):
 

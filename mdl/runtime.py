@@ -1,12 +1,12 @@
 from .context import Context
 from .declarations import implements
-from .interfaces import ITransform, IApplication
+from .interfaces import IApplication
 
 __all__ = ('Transform', 'Error', 'Errors', 'Route')
 
 
 class Transform(object):
-    implements(ITransform)
+    # implements(ITransform)
 
     def __init__(self, transforms, errors):
         self._transforms = transforms

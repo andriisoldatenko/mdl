@@ -36,13 +36,13 @@ class ResponseRenderer(object):
         return self.resp_impl.output_length
 
     def prepare(self, request,
-               HttpVersion10=HttpVersion10,
-               HttpVersion11=HttpVersion11,
-               CONNECTION=hdrs.CONNECTION,
-               DATE=hdrs.DATE,
-               SERVER=hdrs.SERVER,
-               SET_COOKIE=hdrs.SET_COOKIE,
-               TRANSFER_ENCODING=hdrs.TRANSFER_ENCODING):
+                HttpVersion10=HttpVersion10,
+                HttpVersion11=HttpVersion11,
+                CONNECTION=hdrs.CONNECTION,
+                DATE=hdrs.DATE,
+                SERVER=hdrs.SERVER,
+                SET_COOKIE=hdrs.SET_COOKIE,
+                TRANSFER_ENCODING=hdrs.TRANSFER_ENCODING):
 
         yield from request._prepare_hook(self.response)
 
@@ -77,7 +77,7 @@ class ResponseRenderer(object):
             self.response.reason)
 
         headers = self.response.headers
-        #for cookie in self.ctx.response.cookies.values():
+        # for cookie in self.ctx.response.cookies.values():
         #    value = cookie.output(header='')[1:]
         #    headers.add(SET_COOKIE, value)
 
@@ -130,11 +130,12 @@ class ResponseRenderer(object):
         if self.response.content_coding is not None:
             self._do_start_compression(self.response.content_coding)
         else:
-            accept_encoding = request.headers.get(hdrs.ACCEPT_ENCODING, '').lower()
+            accept_encoding = request.headers.get(
+                hdrs.ACCEPT_ENCODING, '').lower()
             for coding in ContentCoding:
                 if coding.value in accept_encoding:
                     self._do_start_compression(coding)
                     return
 
     def write_eof(self):
-        yield from  self.writer.write_eof()
+        yield from self.writer.write_eof()

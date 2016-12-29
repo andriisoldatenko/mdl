@@ -3,7 +3,10 @@ from aiohttp.protocol import HttpVersion10, HttpVersion11
 from aiohttp.protocol import WebResponse as ResponseImpl
 
 from ..web import hdrs
+from ..web.interfaces import IStream
 from ..web.response import ContentCoding
+
+from .stream import StreamWriter
 
 
 class ResponseRenderer(object):
@@ -15,6 +18,7 @@ class ResponseRenderer(object):
         self.response = ctx.response
         self.body = body
 
+        self.writer = None
         self.eof_sent = False
         self.resp_impl = None
         self.keep_alive = None
@@ -109,7 +113,12 @@ class ResponseRenderer(object):
         resp_impl.headers = headers
         resp_impl.send_headers()
 
-        yield from self.write(body)
+        self.writer = StreamWriter(self.ctx.params, request, resp_impl)
+
+        if IStream.providedBy(body):
+            yield from body(self.writer)
+        else:
+            yield from self.writer.write(body)
 
     def _do_start_compression(self, coding):
         if coding != ContentCoding.identity:
@@ -127,25 +136,5 @@ class ResponseRenderer(object):
                     self._do_start_compression(coding)
                     return
 
-    def write(self, data):
-        assert isinstance(data, (bytes, bytearray, memoryview)), \
-            "data argument must be byte-ish (%r)" % type(data)
-
-        if self.eof_sent:
-            raise RuntimeError("Cannot call write() after write_eof()")
-        if self.resp_impl is None:
-            raise RuntimeError("Cannot call write() before start()")
-
-        if data:
-            return self.resp_impl.write(data)
-        else:
-            return ()
-
     def write_eof(self):
-        if self.eof_sent:
-            return
-        if self.resp_impl is None:
-            raise RuntimeError("Response has not been started")
-
-        yield from self.resp_impl.write_eof()
-        self.eof_sent = True
+        yield from  self.writer.write_eof()

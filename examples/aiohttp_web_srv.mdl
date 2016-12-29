@@ -9,6 +9,20 @@ x-name: TestApp
 x-package: aiohttp_web_srv
 
 paths:
+  /stream/test/:
+    get:
+       tags:
+         - root
+       operationId: stream_test
+       produces:
+         - text/html
+       responses:
+         '200':
+           description: OK
+
+       x-transform:
+         - aiohttp_web_srv.prepare_stream
+
   /{item_id}/:
     get:
        tags:

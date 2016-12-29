@@ -4,6 +4,7 @@
 import mdl
 import asyncio
 import textwrap
+import aiohttp
 
 from aiohttp.web import Application, Response, StreamResponse, run_app
 
@@ -23,7 +24,10 @@ class ItemIDFormat(mdl.SwaggerFormat):
     def to_python(self, value):
         return ItemID(value)
 
-
+    
+##########################
+# Simple handler
+##########################
 async def index(ctx):
     return textwrap.dedent(
     """
@@ -32,10 +36,28 @@ async def index(ctx):
     """).format(url='127.0.0.1:8080', item_id='12345')
 
 
+################################
+# Path parameter in swagger spec
+################################
 async def item_info(ctx):
     return b"Body changed %s\n\n" % str(ctx.params.item_id).encode('utf-8')
 
 
+################################
+# Streaming response
+################################
+def stream(stream):
+    resp = yield from aiohttp.request(url='http://python.org', method='get')
+    blob = yield from resp.read()
+    yield from stream.write(blob)
+
+
+async def prepare_stream(ctx):
+    ctx.response.enable_chunked_encoding(256)
+    return mdl.aiohttp.Stream(stream)
+
+
+#
 def init(loop):
     config = mdl.Configurator(mdl.aiohttp.Loader)
     config.load_mdl_file('aiohttp_web_srv.mdl')

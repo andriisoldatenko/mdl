@@ -1,14 +1,36 @@
 """ Response stream """
+from ..declarations import implements
+from ..web.interfaces import IStream, IStreamWriter
+
+__all__ = ('Stream',)
 
 
 class Stream(object):
+    implements(IStream)
 
-    def __init__(self):
-        self._resp = None
+    def __init__(self, coro):
+        self.coro = coro
+
+    def __call__(self, stream):
+        return (yield from self.coro(stream))
+
+
+class StreamWriter(object):
+    implements(IStreamWriter)
+
+    def __init__(self, params, request, response):
+        self._params = params
+        self._request = request
+        self._resp = response
         self._eof_sent = False
 
-    def start(self, response):
-        self._resp = response
+    @property
+    def params(self):
+        return self._params
+
+    @property
+    def request(self):
+        return self._request
 
     def write(self, data):
         assert isinstance(data, (bytes, bytearray, memoryview)), \

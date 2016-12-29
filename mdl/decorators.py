@@ -1,7 +1,6 @@
 import six
 import venusian
 from zope.interface.interfaces import IInterface
-from bravado_core.formatter import SwaggerFormat
 
 from .declarations import implements, directlyProvides
 from .exceptions import ConfigurationError
@@ -10,7 +9,7 @@ from .interfaces import ANY, CATEGORY
 from .interfaces import ITransform, ITransformDefinition
 from .verify import verifyObject
 
-__all__ = ('transform', 'adapter', 'config', 'format')
+__all__ = ('transform', 'adapter', 'config')
 
 _marker = object()
 
@@ -102,34 +101,3 @@ class transform(object):
 @adapter(_ITransformFunction, ITransformDefinition)
 def get_trans_definition(transform):
     return transform.__trans_def__
-
-
-class _format(object):
-
-    def __init__(self, format):
-        self.format = format
-
-
-def _empty_validate(val):
-    pass
-
-
-def format(name, to_wire, to_python, validate=None, description=''):
-
-    if validate is None:
-        validate = _empty_validate
-
-    format = SwaggerFormat(
-        format=name,
-        to_wire=to_wire,
-        to_python=to_python,
-        validate=validate,
-        description=description)
-
-    def register(scanner, name, wrapped):
-        scanner.config.loader.register_format(format)
-
-    marker = _format(format)
-    venusian.attach(marker, register, category=CATEGORY)
-
-    return marker

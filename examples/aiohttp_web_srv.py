@@ -14,11 +14,14 @@ class ItemID(object):
         self.value = value
 
 
-ITEM_ID_FORMAT = mdl.format(
-    'itemID',
-    to_wire=lambda item: item.value,
-    to_python=lambda value: ItemID(value),
-)
+@mdl.format('itemID')
+class ItemIDFormat(mdl.SwaggerFormat):
+
+    def to_wire(self, item):
+        return item.value
+
+    def to_python(self, value):
+        return ItemID(value)
 
 
 async def index(ctx):

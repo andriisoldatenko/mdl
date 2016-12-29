@@ -9,7 +9,7 @@ __all__ = ('WebContext',)
 class WebContext(Context):
     implements(interfaces.IWebContext)
 
-    def __init__(self, op, request, params, markers=()):
+    def __init__(self, op, request, params, keep_alive=None, markers=()):
         super(WebContext, self).__init__(markers)
 
         self.op = op
@@ -17,7 +17,7 @@ class WebContext(Context):
         self.request = request
         self.response = Response()
 
-        self._keep_alive = request.keep_alive
+        self._keep_alive = keep_alive
         self._tcp_cork = None
         self._tcp_nodelay = None
 

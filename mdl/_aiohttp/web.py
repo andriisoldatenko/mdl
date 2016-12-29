@@ -25,19 +25,22 @@ class WebApplication(web.Application):
         if resp is None:
             handler = match_info.handler
 
-            # init operations params
+            # init context
             if IRoute.providedBy(handler):
                 ctx = WebContext(
-                    handler.op, request, unmarshal_request(handler.params_cls, request))
+                    handler.op, request, unmarshal_request(handler.params_cls, request),
+                    keep_alive=request.keep_alive)
             else:
-                ctx = WebContext(None, request, None)
+                ctx = WebContext(
+                    None, request, None,
+                    keep_alive=request.keep_alive)
 
             for app in match_info.apps:
                 for factory in reversed(app.middlewares):
                     handler = await factory(app, handler)
 
-            resp = await handler(ctx)
-            return ResponseRenderer(ctx, resp)
+            body = await handler(ctx)
+            return ResponseRenderer(ctx, body)
 
         assert isinstance(resp, web.StreamResponse), (
             "Handler {!r} should return response instance, "

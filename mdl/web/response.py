@@ -59,10 +59,6 @@ class Response(helpers.HeadersMixin):
         self._content_coding = value
 
     @property
-    def content_coding_enabled(self):
-        return self._content_coding is not None
-
-    @property
     def status(self):
         return self._status
 

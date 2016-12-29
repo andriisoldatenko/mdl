@@ -8,10 +8,12 @@ from ..web.response import ContentCoding
 
 class ResponseRenderer(object):
 
-    def __init__(self, ctx, response):
+    def __init__(self, ctx, body):
         self.ctx = ctx
+        self.op = ctx.op
         self.request = None
-        self.response = response
+        self.response = ctx.response
+        self.body = body
 
         self.eof_sent = False
         self.resp_impl = None
@@ -19,7 +21,7 @@ class ResponseRenderer(object):
 
     @property
     def status(self):
-        return self.ctx.response.status
+        return self.response.status
 
     @property
     def body_length(self):
@@ -38,24 +40,22 @@ class ResponseRenderer(object):
                SET_COOKIE=hdrs.SET_COOKIE,
                TRANSFER_ENCODING=hdrs.TRANSFER_ENCODING):
 
-        yield from request._prepare_hook(self)
-
-        self.request = request
+        yield from request._prepare_hook(self.response)
 
         # set content type
-        if self.ctx.response.content_type is None:
-            self.ctx.response.content_type = self.ctx.op.produces[0]
+        if self.response.content_type is None:
+            self.response.content_type = self.op.produces[0]
 
         # respone body
-        if isinstance(self.response, str):
-            charset = self.ctx.response.charset
+        if isinstance(self.body, str):
+            charset = self.response.charset
             if charset is None:
                 charset = 'utf-8'
-                self.ctx.response.charset = charset
+                self.response.charset = charset
 
-            body = self.response.encode(charset)
+            body = self.body.encode(charset)
         else:
-            body = self.response
+            body = self.body
 
         # keep-alive
         keep_alive = self.ctx.keep_alive
@@ -67,34 +67,34 @@ class ResponseRenderer(object):
 
         resp_impl = self.resp_impl = ResponseImpl(
             request._writer,
-            self.ctx.response.status,
+            self.response.status,
             version,
             not keep_alive,
-            self.ctx.response.reason)
+            self.response.reason)
 
-        headers = self.ctx.response.headers
+        headers = self.response.headers
         #for cookie in self.ctx.response.cookies.values():
         #    value = cookie.output(header='')[1:]
         #    headers.add(SET_COOKIE, value)
 
-        if self.ctx.response.content_coding is not None:
+        if self.response.content_coding is not None:
             self._start_compression(request)
 
-        if self.ctx.response.chunked:
+        if self.response.chunked:
             if request.version != HttpVersion11:
                 raise RuntimeError(
                     "Using chunked encoding is forbidden "
                     "for HTTP/{0.major}.{0.minor}".format(request.version))
             resp_impl.chunked = True
-            if self.ctx.response.chunk_size:
-                resp_impl.add_chunking_filter(self.ctx.response.chunk_size)
+            if self.response.chunk_size:
+                resp_impl.add_chunking_filter(self.response.chunk_size)
             headers[TRANSFER_ENCODING] = 'chunked'
         else:
-            content_length = self.ctx.response.content_length
+            content_length = self.response.content_length
             if content_length is None:
-                self.ctx.response.content_length = len(body)
+                self.response.content_length = len(body)
 
-            resp_impl.length = self.ctx.response.content_length
+            resp_impl.length = self.response.content_length
 
         headers.setdefault(DATE, request.time_service.strtime())
         headers.setdefault(SERVER, resp_impl.SERVER_SOFTWARE)
@@ -113,13 +113,13 @@ class ResponseRenderer(object):
 
     def _do_start_compression(self, coding):
         if coding != ContentCoding.identity:
-            self.ctx.response.headers[hdrs.CONTENT_ENCODING] = coding.value
-            self.ctx.response.content_length = None
+            self.response.headers[hdrs.CONTENT_ENCODING] = coding.value
+            self.response.content_length = None
             self.resp_impl.add_compression_filter(coding.value)
 
     def _start_compression(self, request):
-        if self.ctx.response.content_coding is not None:
-            self._do_start_compression(self.ctx.response.content_coding)
+        if self.response.content_coding is not None:
+            self._do_start_compression(self.response.content_coding)
         else:
             accept_encoding = request.headers.get(hdrs.ACCEPT_ENCODING, '').lower()
             for coding in ContentCoding:
@@ -140,11 +140,6 @@ class ResponseRenderer(object):
             return self.resp_impl.write(data)
         else:
             return ()
-
-    def drain(self):
-        if self.resp_impl is None:
-            raise RuntimeError("Response has not been started")
-        yield from self.resp_impl.transport.drain()
 
     def write_eof(self):
         if self.eof_sent:

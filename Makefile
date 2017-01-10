@@ -20,17 +20,17 @@ flake: .flake
 	@touch .develop
 
 test: .develop
-	@nosetests ./tests
+	@pytest tests
 
 vtest: .develop
-	@nosetests -s -v ./tests
+	@pytest -v tests
 
 cov cover coverage:
 	tox
 
 cov-dev: .develop
-	@nosetests --with-coverage --cover-html --cover-package=mdl --cover-tests tests
-	@echo "open file://`pwd`/cover/index.html"
+	@pytest --cov=mdl --cov-report=html --cov-report=term tests
+	@echo "open file://`pwd`/coverage/index.html"
 
 clean:
 	@rm -rf `find . -name __pycache__`

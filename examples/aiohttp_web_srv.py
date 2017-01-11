@@ -41,7 +41,9 @@ async def index(ctx):
 # Path parameter in swagger spec
 ################################
 async def item_info(ctx):
-    return b"Body changed %s\n\n" % str(ctx.params.item_id).encode('utf-8')
+    return "Body changed item_id: %s (%s)\n\n" % (
+        ctx.params.item_id.value,
+        type(ctx.params.item_id.value))
 
 
 ################################

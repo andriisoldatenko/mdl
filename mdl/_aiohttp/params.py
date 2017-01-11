@@ -10,8 +10,10 @@ from bravado_core.unmarshal import unmarshal_schema_object
 from bravado_core.validate import validate_schema_object
 from bravado_core.validate import validate_security_object
 
+from ..swagger import Location
 
-def unmarshal_request(cls, request):
+
+async def unmarshal_request(cls, request):
     """Unmarshal Swagger request parameters from the passed in request like
     object.
 
@@ -21,8 +23,8 @@ def unmarshal_request(cls, request):
     """
     request_data = {}
     for param_name, param in iteritems(cls.__oper__.params):
-        param_value = unmarshal_param(param, request)
-        request_data[param_name] = param_value
+        param_value = await unmarshal_param(param, request)
+        request_data[param.attr_name] = param_value
 
     if cls.__oper__.swagger_spec.config['validate_requests']:
         validate_security_object(cls.__oper__, request_data)
@@ -30,7 +32,7 @@ def unmarshal_request(cls, request):
     return cls(**request_data)
 
 
-def unmarshal_param(param, request):
+async def unmarshal_param(param, request):
     """Unmarshal the given parameter from the passed in request like object.
 
     :type param: :class:`bravado_core.param.Param`
@@ -46,18 +48,18 @@ def unmarshal_param(param, request):
 
     default_value = schema.get_default(swagger_spec, param_spec)
 
-    if location == 'path':
+    if location == Location.path:
         raw_value = cast_param(request.match_info.get(param.name, None))
-    elif location == 'query':
+    elif location == Location.query:
         raw_value = cast_param(request.query.get(param.name, default_value))
-    elif location == 'header':
+    elif location == Location.header:
         raw_value = cast_param(request.headers.get(param.name, default_value))
-    elif location == 'formData':
+    elif location == Location.form_data:
         if param_type == 'file':
             raw_value = request.files.get(param.name, None)
         else:
             raw_value = cast_param(request.form.get(param.name, default_value))
-    elif location == 'body':
+    elif location == Location.body:
         # TODO: verify content-type header
         try:
             raw_value = request.json()
@@ -72,7 +74,7 @@ def unmarshal_param(param, request):
     if raw_value is None and not schema.is_required(swagger_spec, param_spec):
         return None
 
-    if param_type == 'array' and location != 'body':
+    if param_type == 'array' and location != Location.body:
         raw_value = unmarshal_collection_format(
             swagger_spec, param_spec, raw_value)
 

@@ -40,7 +40,7 @@ class Loader(object):
                 return
 
         # extract package
-        package = data.get('x-package', ())
+        package = data.get('x-mdl-package', ())
         if isinstance(package, string_types):
             package = (package,)
 
@@ -61,11 +61,11 @@ class Loader(object):
             spec.build()
 
             app_info = ApplicationInfo(
-                data.get('x-name', ''),
+                data.get('x-mdl-name', ''),
                 data.get('basePath', '').rstrip('/'),
-                self._seq_of_strings(data.get('x-in-transform')),
-                self._seq_of_strings(data.get('x-out-transform')),
-                self._dict_from_list(data, 'x-errors'))
+                self._seq_of_strings(data.get('x-mdl-middleware')),
+                self._seq_of_strings(data.get('x-mdl-middleware')),
+                self._dict_from_list(data, 'x-mdl-errors'))
 
             self.create_app(spec, app_info, config)
 
@@ -77,8 +77,8 @@ class Loader(object):
                         op.operation_id,
                         op.path_name,
                         op.http_method,
-                        self._seq_of_strings(op.op_spec.get('x-transform')),
-                        self._dict_from_list(op.op_spec, 'x-errors'))
+                        self._seq_of_strings(op.op_spec.get('x-mdl-handler')),
+                        self._dict_from_list(op.op_spec, 'x-mdl-errors'))
 
                     self.create_operation(op, app_info, op_info, config)
 

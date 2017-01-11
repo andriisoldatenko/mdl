@@ -5,8 +5,8 @@ info:
 
 basePath: /
 
-x-name: TestApp
-x-package: aiohttp_web_srv
+x-mdl-name: TestApp
+x-mdl-package: aiohttp_web_srv
 
 paths:
   /stream/test/:
@@ -20,7 +20,7 @@ paths:
          '200':
            description: OK
 
-       x-transform:
+       x-mdl-handler:
          - aiohttp_web_srv.prepare_stream
 
   /{item_id}/:
@@ -39,9 +39,11 @@ paths:
          format: itemID
        responses:
          '200':
-           description: OK
+             description: OK
+             schema:
+               $ref: '#/definitions/Pong'
 
-       x-transform:
+       x-mdl-handler:
          - aiohttp_web_srv.item_info
 
   /:
@@ -55,5 +57,12 @@ paths:
          '200':
            description: OK
 
-       x-transform:
+       x-mdl-handler:
          - aiohttp_web_srv.index
+
+definitions:
+  Pong:
+    type: object
+    properties:
+       pang:
+         type: string

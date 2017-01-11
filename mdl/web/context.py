@@ -2,6 +2,7 @@ from . import interfaces
 from .response import Response
 from ..context import Context
 from ..declarations import implements
+from ..swagger import Location
 
 __all__ = ('WebContext',)
 
@@ -46,17 +47,30 @@ class WebContext(Context):
 class Params(object):
 
     def __init__(self, **params):
-        self.__dict__.update(params)
+        mapping = self.__mapping__
+        self.__dict__.update(
+            ((mapping[name], value)
+             for name, value in params.items())
+        )
 
     @staticmethod
     def generate_class(op):
         """ Generate class for swagger operation """
         slots = {'__oper__'}
-        attrs = {'__oper__': op}
+
+        mapping = {}
+        attrs = {'__oper__': op, '__mapping__': mapping}
 
         for name, element in op.params.items():
-            slots.add(name)
-            attrs[name] = ParamsProperty(name)
+            if element.location == Location.header:
+                attr_name = 'HTTP_%s' % name.replace('-', '_')
+            else:
+                attr_name = name
+
+            slots.add(attr_name)
+            attrs[attr_name] = ParamsProperty(attr_name)
+            element.attr_name = attr_name
+            mapping[name] = attr_name
 
         name = 'Params_%s' % op.operation_id
         cls = type(name, (Params,), attrs)
